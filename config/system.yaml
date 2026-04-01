@@ -15,7 +15,7 @@ aks:
     chunk_overlap: 64
     fts_weight: 0.6          # Phase 1: keyword only
     vector_weight: 0.4       # Phase 2: activated when embeddings enabled
-    embeddings_enabled: false  # enable in Phase 2
+    embeddings_enabled: true
 
   # Cost control
   cost:

@@ -74,6 +74,25 @@ def _anthropic_complete(client: Any, config: ModelConfig, system: str, messages:
 
 
 # ---------------------------------------------------------------------------
+# Embeddings
+# ---------------------------------------------------------------------------
+
+def get_embedding(text: str, provider: str = "gemini") -> list[float]:
+    """Return a dense embedding vector for the given text."""
+    if provider == "gemini":
+        from google import genai
+        from aks.utils.config import models_config
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise EnvironmentError("GEMINI_API_KEY is not set")
+        client = genai.Client(api_key=api_key)
+        model = models_config()["embeddings"]["model"]
+        result = client.models.embed_content(model=model, contents=text)
+        return list(result.embeddings[0].values)
+    raise ValueError(f"Embeddings not supported for provider: {provider!r}")
+
+
+# ---------------------------------------------------------------------------
 # Unified interface
 # ---------------------------------------------------------------------------
 

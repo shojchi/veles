@@ -2,27 +2,27 @@ provider: "gemini"  # "gemini" | "anthropic" — switch here to change globally
 
 models:
   orchestrator:
-    model: "gemini-2.0-flash-lite"
+    model: "gemini-2.5-flash-lite"
     max_tokens: 512
     temperature: 0.0         # deterministic routing
 
   code:
-    model: "gemini-2.0-flash"
+    model: "gemini-2.5-flash-lite"
     max_tokens: 4096
     temperature: 0.2
 
   pkm:
-    model: "gemini-2.0-flash"
+    model: "gemini-2.5-flash-lite"
     max_tokens: 4096
     temperature: 0.4
 
   writing:
-    model: "gemini-2.0-flash"
+    model: "gemini-2.5-flash-lite"
     max_tokens: 4096
     temperature: 0.6
 
   planning:
-    model: "gemini-2.0-flash-lite"
+    model: "gemini-2.5-flash-lite"
     max_tokens: 2048
     temperature: 0.1
 

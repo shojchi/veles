@@ -53,7 +53,8 @@ def status() -> None:
     click.echo("\n=== AKS Status ===")
     click.echo(f"Provider: {get_provider()}")
     click.echo(f"Notes   : {sys_cfg['notes_dir']}")
-    click.echo(f"Embeds  : {'enabled' if sys_cfg['retrieval']['embeddings_enabled'] else 'disabled (Phase 1)'}")
+    embed_model = mdl_cfg.get("embeddings", {}).get("model", "?") if sys_cfg["retrieval"]["embeddings_enabled"] else None
+    click.echo(f"Embeds  : {'enabled (' + embed_model + ')' if embed_model else 'disabled'}")
     click.echo(f"Daily $ : ${sys_cfg['cost']['daily_cap_usd']:.2f} cap")
     click.echo("\nActive agents:")
     for name in ACTIVE_AGENTS:
