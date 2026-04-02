@@ -4,27 +4,23 @@ fallback_chain:
     base_url: https://api.cerebras.ai/v1
     api_key_env: CEREBRAS_API_KEY
     model: llama3.1-8b
-    pricing: {input_per_1m: 0.10, output_per_1m: 0.10}
 
   - name: gemini
     type: gemini
     api_key_env: GEMINI_API_KEY
     model: gemini-2.5-flash-lite
-    pricing: {input_per_1m: 0.075, output_per_1m: 0.30}
 
   - name: groq
     type: openai_compat
     base_url: https://api.groq.com/openai/v1
     api_key_env: GROQ_API_KEY
     model: llama-3.1-8b-instant
-    pricing: {input_per_1m: 0.05, output_per_1m: 0.08}
 
   - name: mistral
     type: openai_compat
     base_url: https://api.mistral.ai/v1
     api_key_env: MISTRAL_API_KEY
     model: mistral-small-latest
-    pricing: {input_per_1m: 0.10, output_per_1m: 0.30}
 
 models:
   orchestrator:
@@ -52,4 +48,3 @@ models:
     model: gemini-embedding-001
     provider: gemini
     dimensions: 3072
-    pricing: {input_per_1m: 0.025, output_per_1m: 0.0}

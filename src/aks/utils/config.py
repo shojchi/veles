@@ -7,8 +7,11 @@ from pathlib import Path
 import yaml
 
 
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-CONFIG_DIR = PROJECT_ROOT / "config"
+import os
+
+_env_home = os.environ.get("AKS_HOME")
+CONFIG_DIR = Path(_env_home) / "config" if _env_home else Path(__file__).parent.parent / "config"
+DATA_DIR = Path(_env_home) if _env_home else Path.home() / ".local" / "share" / "aks"
 
 
 @functools.lru_cache(maxsize=None)
@@ -25,8 +28,8 @@ def models_config() -> dict:
     return load_yaml(CONFIG_DIR / "models.yaml")["models"]
 
 
-def get_provider() -> str:
-    return load_yaml(CONFIG_DIR / "models.yaml").get("provider", "gemini")
+def get_fallback_chain() -> list[dict]:
+    return load_yaml(CONFIG_DIR / "models.yaml").get("fallback_chain", [])
 
 
 def agent_config(name: str) -> dict:

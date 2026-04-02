@@ -2,35 +2,56 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
 from aks.agents.base import AgentMessage, AgentResponse, BaseAgent
 from aks.agents.code_agent import CodeAgent
-from aks.models.llm import ModelConfig, complete
-from aks.retrieval.search import retrieve_context
+from aks.agents.pkm_agent import PKMAgent
+from aks.agents.writing_agent import WritingAgent
+from aks.agents.planning_agent import PlanningAgent
 from aks.knowledge.store import KnowledgeStore
-from aks.utils.config import models_config, get_provider
+from aks.retrieval.search import retrieve_context
+from aks.utils.config import models_config, agent_config
 
-# Phase 1: only code agent is active
 ACTIVE_AGENTS: dict[str, type[BaseAgent]] = {
     "code": CodeAgent,
+    "pkm": PKMAgent,
+    "writing": WritingAgent,
+    "planning": PlanningAgent,
 }
 DEFAULT_AGENT = "code"
 
 ROUTING_SYSTEM = """You are an intent classifier for a personal AI assistant.
-Classify the user's query into exactly one of these agents: {agents}.
+Classify the user query into exactly one of these agents: {agents}.
+Reply with ONLY the agent name — one word, lowercase. No explanation.
 
-Rules:
-- Reply with ONLY the agent name (one word, lowercase).
-- When uncertain, reply with the default: {default}.
-
-Agent descriptions:
+Agent roles:
 {descriptions}
+
+Routing rules:
+- code     → writing/debugging/reviewing actual code, CLI commands, software architecture, DevOps, specific languages (Python, JS, SQL…)
+- planning → learning strategies, roadmaps, "best way to…", how-to advice, step-by-step guides, project breakdowns, schedules, priorities
+- pkm      → recalling or searching the user's own notes, summarizing research, finding connections across knowledge base
+- writing  → drafting emails, documents, reports, translations, editing or proofreading existing text
+
+Key distinction: "how to learn X" or "best way to do Y" → planning, NOT code (even if X is a programming topic).
+
+Examples:
+query: "how do i fix this python KeyError?" → code
+query: "what is the best way to learn programming?" → planning
+query: "review my docker-compose file" → code
+query: "write an email to my manager about the delay" → writing
+query: "what did i write about machine learning?" → pkm
+query: "plan my week" → planning
+query: "summarize my notes on kubernetes" → pkm
+query: "translate this paragraph to ukrainian" → writing
+query: "debug this bash script" → code
+query: "how should i approach learning system design?" → planning
+
+When uncertain, reply with: {default}
 """
 
 
 def _build_routing_system() -> str:
-    from aks.utils.config import agent_config
     descs = "\n".join(
         f"- {name}: {agent_config(name)['description']}"
         for name in ACTIVE_AGENTS
@@ -42,21 +63,34 @@ def _build_routing_system() -> str:
     )
 
 
+def _keyword_route(query: str) -> str | None:
+    """Fast keyword pre-filter. Returns agent name if confident, else None."""
+    q = query.lower()
+    scores: dict[str, int] = {name: 0 for name in ACTIVE_AGENTS}
+    for name in ACTIVE_AGENTS:
+        cfg = agent_config(name)
+        for kw in cfg.get("keywords", []):
+            if kw.lower() in q:
+                scores[name] += 1
+    best_name = max(scores, key=lambda n: scores[n])
+    best_score = scores[best_name]
+    # Only trust keyword routing when there's a clear winner
+    if best_score >= 2:
+        return best_name
+    rivals = [n for n, s in scores.items() if s == best_score and n != best_name]
+    if best_score == 1 and not rivals:
+        return best_name
+    return None
+
+
 class Orchestrator:
-    def __init__(self, client: Any, store: KnowledgeStore) -> None:
-        self.client = client
+    def __init__(self, store: KnowledgeStore) -> None:
         self.store = store
-        cfg = models_config()
-        m = cfg["orchestrator"]
-        provider = get_provider()
-        self._routing_config = ModelConfig(
-            model=m["model"],
-            max_tokens=m["max_tokens"],
-            temperature=m["temperature"],
-            provider=provider,
-        )
+        m = models_config()["orchestrator"]
+        self._routing_max_tokens: int = m["max_tokens"]
+        self._routing_temperature: float = m["temperature"]
         self._agents: dict[str, BaseAgent] = {
-            name: cls(client) for name, cls in ACTIVE_AGENTS.items()
+            name: cls() for name, cls in ACTIVE_AGENTS.items()
         }
         self._routing_system = _build_routing_system()
 
@@ -66,12 +100,18 @@ class Orchestrator:
             return force_agent
         if len(self._agents) == 1:
             return DEFAULT_AGENT
-        raw = complete(
-            self.client,
-            self._routing_config,
+        # Fast path: keyword match before spending an LLM call
+        keyword_pick = _keyword_route(query)
+        if keyword_pick:
+            return keyword_pick
+        from aks.models.llm import complete_with_fallback
+        raw, _ = complete_with_fallback(
             self._routing_system,
             [{"role": "user", "content": query}],
-        ).strip().lower()
+            self._routing_max_tokens,
+            self._routing_temperature,
+        )
+        raw = raw.strip().lower()
         return raw if raw in self._agents else DEFAULT_AGENT
 
     def run(

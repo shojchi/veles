@@ -1,0 +1,28 @@
+aks:
+  version: "0.1.0"
+
+  # Knowledge store
+  knowledge_dir: "knowledge"
+  notes_dir: "knowledge/notes"
+  conversations_dir: "knowledge/conversations"
+  documents_dir: "knowledge/documents"
+  index_dir: "knowledge/.index"
+
+  # Retrieval
+  retrieval:
+    max_chunks: 10
+    chunk_size: 512          # tokens
+    chunk_overlap: 64
+    fts_weight: 0.6          # Phase 1: keyword only
+    vector_weight: 0.4       # Phase 2: activated when embeddings enabled
+    embeddings_enabled: true
+
+  # Cost control
+  cost:
+    daily_cap_usd: 5.00
+    prefer_haiku: true       # use Haiku for routing/simple tasks
+
+  # Conversation
+  conversation:
+    max_history_turns: 10
+    session_memory_tokens: 4000

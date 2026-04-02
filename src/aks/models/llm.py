@@ -1,80 +1,113 @@
-"""LLM client — supports Gemini (default) and Anthropic."""
+"""LLM client — provider fallback chain + embeddings."""
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
-from typing import Any
-
-
-@dataclass
-class ModelConfig:
-    model: str
-    max_tokens: int
-    temperature: float
-    provider: str = "gemini"  # "gemini" | "anthropic"
 
 
 # ---------------------------------------------------------------------------
-# Gemini (google-genai SDK)
+# Fallback-chain completion
 # ---------------------------------------------------------------------------
 
-def _gemini_client() -> Any:
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise EnvironmentError("GEMINI_API_KEY is not set")
+def complete_with_fallback(
+    system: str,
+    messages: list[dict],
+    max_tokens: int,
+    temperature: float,
+) -> tuple[str, str]:
+    """Try providers in order. Returns (content, 'provider/model').
+    Skips providers whose API key env var is not set.
+    Checks and records cost via CostLedger."""
+    from aks.utils.config import get_fallback_chain
+    from aks.utils.cost import CostLedger
+
+    ledger = CostLedger()
+    ledger.check_cap()
+
+    chain = get_fallback_chain()
+    errors: list[str] = []
+
+    for cfg in chain:
+        api_key = os.getenv(cfg["api_key_env"], "")
+        if not api_key:
+            continue
+        try:
+            if cfg["type"] == "gemini":
+                content, in_tok, out_tok = _gemini_complete(
+                    api_key, cfg["model"], system, messages, max_tokens, temperature
+                )
+            else:
+                content, in_tok, out_tok = _openai_compat_complete(
+                    cfg["base_url"], api_key, cfg["model"],
+                    system, messages, max_tokens, temperature,
+                )
+            ledger.record(cfg["name"], cfg["model"], in_tok, out_tok)
+            return content, f"{cfg['name']}/{cfg['model']}"
+        except Exception as e:
+            errors.append(f"{cfg['name']}: {e}")
+
+    raise RuntimeError("All providers exhausted:\n" + "\n".join(errors))
+
+
+def _gemini_complete(
+    api_key: str,
+    model: str,
+    system: str,
+    messages: list[dict],
+    max_tokens: int,
+    temperature: float,
+) -> tuple[str, int, int]:
     from google import genai
-    return genai.Client(api_key=api_key)
-
-
-def _gemini_complete(client: Any, config: ModelConfig, system: str, messages: list[dict]) -> str:
     from google.genai import types
 
-    # Convert messages to Gemini Content format
-    # Gemini uses "model" instead of "assistant"
-    contents = []
-    for msg in messages:
-        role = "model" if msg["role"] == "assistant" else msg["role"]
-        contents.append(
-            types.Content(role=role, parts=[types.Part(text=msg["content"])])
+    client = genai.Client(api_key=api_key)
+    contents = [
+        types.Content(
+            role="model" if m["role"] == "assistant" else m["role"],
+            parts=[types.Part(text=m["content"])],
         )
-
+        for m in messages
+    ]
     response = client.models.generate_content(
-        model=config.model,
+        model=model,
         contents=contents,
         config=types.GenerateContentConfig(
             system_instruction=system,
-            max_output_tokens=config.max_tokens,
-            temperature=config.temperature,
+            max_output_tokens=max_tokens,
+            temperature=temperature,
         ),
     )
-    return response.text
+    usage = response.usage_metadata
+    in_tok = getattr(usage, "prompt_token_count", 0) or 0
+    out_tok = getattr(usage, "candidates_token_count", 0) or 0
+    return response.text, in_tok, out_tok
 
 
-# ---------------------------------------------------------------------------
-# Anthropic
-# ---------------------------------------------------------------------------
+def _openai_compat_complete(
+    base_url: str,
+    api_key: str,
+    model: str,
+    system: str,
+    messages: list[dict],
+    max_tokens: int,
+    temperature: float,
+) -> tuple[str, int, int]:
+    import openai
 
-def _anthropic_client() -> Any:
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise EnvironmentError("ANTHROPIC_API_KEY is not set")
-    import anthropic
-    return anthropic.Anthropic(api_key=api_key)
-
-
-def _anthropic_complete(client: Any, config: ModelConfig, system: str, messages: list[dict]) -> str:
-    response = client.messages.create(
-        model=config.model,
-        max_tokens=config.max_tokens,
-        temperature=config.temperature,
-        system=system,
-        messages=messages,
+    client = openai.OpenAI(base_url=base_url, api_key=api_key)
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "system", "content": system}] + messages,
+        max_tokens=max_tokens,
+        temperature=temperature,
     )
-    return response.content[0].text
+    usage = response.usage
+    in_tok = getattr(usage, "prompt_tokens", 0) or 0
+    out_tok = getattr(usage, "completion_tokens", 0) or 0
+    return response.choices[0].message.content, in_tok, out_tok
 
 
 # ---------------------------------------------------------------------------
-# Embeddings
+# Embeddings (always Gemini)
 # ---------------------------------------------------------------------------
 
 def get_embedding(text: str, provider: str = "gemini") -> list[float]:
@@ -82,40 +115,21 @@ def get_embedding(text: str, provider: str = "gemini") -> list[float]:
     if provider == "gemini":
         from google import genai
         from aks.utils.config import models_config
+        from aks.utils.cost import CostLedger
+
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise EnvironmentError("GEMINI_API_KEY is not set")
         client = genai.Client(api_key=api_key)
-        model = models_config()["embeddings"]["model"]
+        embed_cfg = models_config()["embeddings"]
+        model = embed_cfg["model"]
         result = client.models.embed_content(model=model, contents=text)
+
+        # Best-effort token count from usage metadata (may not always be present)
+        usage = getattr(result, "usage_metadata", None)
+        in_tok = getattr(usage, "prompt_token_count", 0) or 0 if usage else 0
+        if in_tok:
+            CostLedger().record("gemini-embedding", model, in_tok, 0)
+
         return list(result.embeddings[0].values)
     raise ValueError(f"Embeddings not supported for provider: {provider!r}")
-
-
-# ---------------------------------------------------------------------------
-# Unified interface
-# ---------------------------------------------------------------------------
-
-_clients: dict[str, Any] = {}
-
-
-def get_client(provider: str = "gemini") -> Any:
-    if provider not in _clients:
-        if provider == "gemini":
-            _clients[provider] = _gemini_client()
-        elif provider == "anthropic":
-            _clients[provider] = _anthropic_client()
-        else:
-            raise ValueError(f"Unknown provider: {provider!r}")
-    return _clients[provider]
-
-
-def complete(
-    client: Any,
-    config: ModelConfig,
-    system: str,
-    messages: list[dict],
-) -> str:
-    if config.provider == "gemini":
-        return _gemini_complete(client, config, system, messages)
-    return _anthropic_complete(client, config, system, messages)

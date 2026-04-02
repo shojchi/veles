@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
-from aks.models.llm import ModelConfig, complete
-from aks.utils.config import agent_config, models_config, get_provider
+from aks.utils.config import agent_config, models_config
 
 
 @dataclass
@@ -32,31 +30,26 @@ class AgentResponse:
 class BaseAgent:
     name: str = "base"
 
-    def __init__(self, client: Any) -> None:
-        self.client = client
+    def __init__(self) -> None:
         self._agent_cfg = agent_config(self.name)
-        cfg = models_config()
-        m = cfg[self.name]
-        provider = get_provider()
-        self.model_config = ModelConfig(
-            model=m["model"],
-            max_tokens=m["max_tokens"],
-            temperature=m["temperature"],
-            provider=provider,
-        )
+        m = models_config()[self.name]
+        self._max_tokens: int = m["max_tokens"]
+        self._temperature: float = m["temperature"]
 
     def run(self, msg: AgentMessage) -> AgentResponse:
+        from aks.models.llm import complete_with_fallback
         system = self._build_system(msg.context)
         messages = list(msg.conversation_history) + [
             {"role": "user", "content": msg.query}
         ]
-        content = complete(self.client, self.model_config, system, messages)
-        sources = self._extract_sources(msg.context)
+        content, provider_model = complete_with_fallback(
+            system, messages, self._max_tokens, self._temperature
+        )
         return AgentResponse(
             agent=self.name,
             content=content,
-            model_used=self.model_config.model,
-            sources_used=sources,
+            model_used=provider_model,
+            sources_used=self._extract_sources(msg.context),
         )
 
     def _build_system(self, context: str) -> str:
