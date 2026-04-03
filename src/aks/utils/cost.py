@@ -4,23 +4,21 @@ from __future__ import annotations
 import sqlite3
 from datetime import date, datetime
 
-from aks.utils.config import DATA_DIR, get_fallback_chain, models_config, system_config
+from aks.utils.config import DATA_DIR, models_config, system_config
 
 
-def _pricing(provider: str) -> dict[str, float]:
-    """Return pricing dict for a provider. Falls back to zero-cost."""
-    for cfg in get_fallback_chain():
-        if cfg["name"] == provider:
-            return cfg.get("pricing", {"input_per_1m": 0.0, "output_per_1m": 0.0})
-    if provider == "gemini-embedding":
-        return models_config().get("embeddings", {}).get(
-            "pricing", {"input_per_1m": 0.0, "output_per_1m": 0.0}
-        )
-    return {"input_per_1m": 0.0, "output_per_1m": 0.0}
+def _pricing(model: str) -> dict[str, float]:
+    """Return pricing dict for a model name. Falls back to zero-cost."""
+    zero = {"input_per_1m": 0.0, "output_per_1m": 0.0}
+    cfg = models_config()
+    for section in cfg.values():
+        if isinstance(section, dict) and section.get("model") == model:
+            return section.get("pricing", zero)
+    return zero
 
 
-def _compute_cost(provider: str, input_tokens: int, output_tokens: int) -> float:
-    p = _pricing(provider)
+def _compute_cost(model: str, input_tokens: int, output_tokens: int) -> float:
+    p = _pricing(model)
     return (input_tokens * p["input_per_1m"] + output_tokens * p["output_per_1m"]) / 1_000_000
 
 
@@ -49,7 +47,7 @@ class CostLedger:
         output_tokens: int,
     ) -> float:
         """Insert a usage row and return the cost in USD."""
-        cost = _compute_cost(provider, input_tokens, output_tokens)
+        cost = _compute_cost(model, input_tokens, output_tokens)
         self._db.execute(
             "INSERT INTO usage(ts, provider, model, input_tokens, output_tokens, cost_usd) "
             "VALUES (?, ?, ?, ?, ?, ?)",

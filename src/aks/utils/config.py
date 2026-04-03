@@ -10,7 +10,9 @@ import yaml
 import os
 
 _env_home = os.environ.get("AKS_HOME")
-CONFIG_DIR = Path(_env_home) / "config" if _env_home else Path(__file__).parent.parent / "config"
+# config/ lives at the project root (4 levels up from this file)
+_project_root = Path(__file__).parent.parent.parent.parent
+CONFIG_DIR = Path(_env_home) / "config" if _env_home else _project_root / "config"
 DATA_DIR = Path(_env_home) if _env_home else Path.home() / ".local" / "share" / "aks"
 
 

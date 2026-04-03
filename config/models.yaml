@@ -5,26 +5,31 @@ models:
     model: "gemini-2.5-flash-lite"
     max_tokens: 512
     temperature: 0.0         # deterministic routing
+    pricing: {input_per_1m: 0.075, output_per_1m: 0.30}
 
   code:
     model: "gemini-2.5-flash-lite"
     max_tokens: 4096
     temperature: 0.2
+    pricing: {input_per_1m: 0.075, output_per_1m: 0.30}
 
   pkm:
     model: "gemini-2.5-flash-lite"
     max_tokens: 4096
     temperature: 0.4
+    pricing: {input_per_1m: 0.075, output_per_1m: 0.30}
 
   writing:
     model: "gemini-2.5-flash-lite"
     max_tokens: 4096
     temperature: 0.6
+    pricing: {input_per_1m: 0.075, output_per_1m: 0.30}
 
   planning:
     model: "gemini-2.5-flash-lite"
     max_tokens: 2048
     temperature: 0.1
+    pricing: {input_per_1m: 0.075, output_per_1m: 0.30}
 
   # Embeddings always use Gemini regardless of provider
   embeddings:
@@ -34,7 +39,7 @@ models:
     pricing: {input_per_1m: 0.025, output_per_1m: 0.0}
 
 # --- Anthropic equivalents (swap provider above to use) ---
-# orchestrator: claude-haiku-4-5-20251001
-# code/pkm/writing: claude-sonnet-4-6
-# planning: claude-haiku-4-5-20251001
+# orchestrator: claude-haiku-4-5-20251001   pricing: {input_per_1m: 0.80, output_per_1m: 4.00}
+# code/pkm/writing: claude-sonnet-4-6       pricing: {input_per_1m: 3.00, output_per_1m: 15.00}
+# planning: claude-haiku-4-5-20251001       pricing: {input_per_1m: 0.80, output_per_1m: 4.00}
 # embeddings: text-embedding-3-small (provider: openai)

@@ -37,7 +37,9 @@ def _gemini_contents(messages: list[dict]) -> list:
     ]
 
 
-def _gemini_complete(client: Any, config: ModelConfig, system: str, messages: list[dict]) -> str:
+def _gemini_complete(
+    client: Any, config: ModelConfig, system: str, messages: list[dict]
+) -> tuple[str, int, int]:
     from google.genai import types
 
     response = client.models.generate_content(
@@ -49,14 +51,19 @@ def _gemini_complete(client: Any, config: ModelConfig, system: str, messages: li
             temperature=config.temperature,
         ),
     )
-    return response.text
+    usage = response.usage_metadata
+    in_tok = getattr(usage, "prompt_token_count", 0) or 0
+    out_tok = getattr(usage, "candidates_token_count", 0) or 0
+    return response.text, in_tok, out_tok
 
 
 def _gemini_stream(
     client: Any, config: ModelConfig, system: str, messages: list[dict]
-) -> Iterator[str]:
+) -> Iterator[tuple[str, int, int]]:
+    """Yield (chunk, 0, 0) per chunk; final item is ("", in_tok, out_tok)."""
     from google.genai import types
 
+    in_tok = out_tok = 0
     for chunk in client.models.generate_content_stream(
         model=config.model,
         contents=_gemini_contents(messages),
@@ -67,7 +74,12 @@ def _gemini_stream(
         ),
     ):
         if chunk.text:
-            yield chunk.text
+            yield chunk.text, 0, 0
+        usage = getattr(chunk, "usage_metadata", None)
+        if usage:
+            in_tok = getattr(usage, "prompt_token_count", 0) or 0
+            out_tok = getattr(usage, "candidates_token_count", 0) or 0
+    yield "", in_tok, out_tok
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +94,9 @@ def _anthropic_client() -> Any:
     return anthropic.Anthropic(api_key=api_key)
 
 
-def _anthropic_complete(client: Any, config: ModelConfig, system: str, messages: list[dict]) -> str:
+def _anthropic_complete(
+    client: Any, config: ModelConfig, system: str, messages: list[dict]
+) -> tuple[str, int, int]:
     response = client.messages.create(
         model=config.model,
         max_tokens=config.max_tokens,
@@ -90,12 +104,15 @@ def _anthropic_complete(client: Any, config: ModelConfig, system: str, messages:
         system=system,
         messages=messages,
     )
-    return response.content[0].text
+    in_tok = response.usage.input_tokens
+    out_tok = response.usage.output_tokens
+    return response.content[0].text, in_tok, out_tok
 
 
 def _anthropic_stream(
     client: Any, config: ModelConfig, system: str, messages: list[dict]
-) -> Iterator[str]:
+) -> Iterator[tuple[str, int, int]]:
+    """Yield (chunk, 0, 0) per chunk; final item is ("", in_tok, out_tok)."""
     with client.messages.stream(
         model=config.model,
         max_tokens=config.max_tokens,
@@ -103,7 +120,12 @@ def _anthropic_stream(
         system=system,
         messages=messages,
     ) as s:
-        yield from s.text_stream
+        for text in s.text_stream:
+            yield text, 0, 0
+        final = s.get_final_message()
+    in_tok = final.usage.input_tokens
+    out_tok = final.usage.output_tokens
+    yield "", in_tok, out_tok
 
 
 # ---------------------------------------------------------------------------
@@ -115,12 +137,20 @@ def get_embedding(text: str, provider: str = "gemini") -> list[float]:
     if provider == "gemini":
         from google import genai
         from aks.utils.config import models_config
+        from aks.utils.cost import CostLedger
+
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise EnvironmentError("GEMINI_API_KEY is not set")
         client = genai.Client(api_key=api_key)
         model = models_config()["embeddings"]["model"]
         result = client.models.embed_content(model=model, contents=text)
+
+        usage = getattr(result, "usage_metadata", None)
+        in_tok = getattr(usage, "prompt_token_count", 0) or 0 if usage else 0
+        if in_tok:
+            CostLedger().record("gemini", model, in_tok, 0)
+
         return list(result.embeddings[0].values)
     raise ValueError(f"Embeddings not supported for provider: {provider!r}")
 
@@ -149,9 +179,15 @@ def complete(
     system: str,
     messages: list[dict],
 ) -> str:
+    from aks.utils.cost import CostLedger
+
     if config.provider == "gemini":
-        return _gemini_complete(client, config, system, messages)
-    return _anthropic_complete(client, config, system, messages)
+        text, in_tok, out_tok = _gemini_complete(client, config, system, messages)
+    else:
+        text, in_tok, out_tok = _anthropic_complete(client, config, system, messages)
+    if in_tok or out_tok:
+        CostLedger().record(config.provider, config.model, in_tok, out_tok)
+    return text
 
 
 def stream(
@@ -160,8 +196,21 @@ def stream(
     system: str,
     messages: list[dict],
 ) -> Iterator[str]:
-    """Yield text chunks as they arrive from the provider."""
-    if config.provider == "gemini":
-        yield from _gemini_stream(client, config, system, messages)
-    else:
-        yield from _anthropic_stream(client, config, system, messages)
+    """Yield text chunks as they arrive; records cost after the last chunk."""
+    from aks.utils.cost import CostLedger
+
+    raw = _gemini_stream(client, config, system, messages) if config.provider == "gemini" \
+        else _anthropic_stream(client, config, system, messages)
+
+    in_tok = out_tok = 0
+    try:
+        for chunk, it, ot in raw:
+            if chunk:
+                yield chunk
+            if it:
+                in_tok = it
+            if ot:
+                out_tok = ot
+    finally:
+        if in_tok or out_tok:
+            CostLedger().record(config.provider, config.model, in_tok, out_tok)
