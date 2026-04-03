@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "AKS Web UI",
+      "runtimeExecutable": "/Users/roman.hordiichuk/.local/bin/uv",
+      "runtimeArgs": ["run", "aks", "serve", "--reload"],
+      "port": 8080
+    }
+  ]
+}
