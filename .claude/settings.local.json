@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(gh repo:*)",
-      "Bash(brew list:*)"
+      "Bash(brew list:*)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
