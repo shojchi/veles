@@ -1,12 +1,12 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 language: 'en-US'
 tone_instructions: |
-  This is a pet project for learning purposes.
+  This is a personal AI assistant project (AKS) built in Python for learning purposes.
   Please focus on:
-  1. Code readability and maintainability
-  2. Best practices for beginners
-  3. Explanations that help me learn
-  4. Security basics
+  1. Python best practices (PEP 8, type hints, async patterns)
+  2. Code readability and maintainability
+  3. LLM integration patterns and prompt engineering quality
+  4. Security basics (API key handling, input sanitization)
   Be encouraging and educational in feedback!
 enable_free_tier: true
 reviews:
@@ -26,14 +26,16 @@ reviews:
     drafts: false
   path_filters:
     - '!dist/**'
-    - '!node_modules/**'
     - '!build/**'
-    - '!*.min.js'
-    - '!*.log'
-    - '!.ai/**'
-    - '!.angular/**'
-    - '!.vscode/**'
+    - '!*.egg-info/**'
+    - '!__pycache__/**'
+    - '!*.pyc'
+    - '!.venv/**'
+    - '!knowledge/.index/**'
+    - '!knowledge/conversations/**'
+    - '!knowledge/documents/**'
+    - '!.claude/**'
     - '!.github/**'
-    - '!.docs/**'
+    - '!*.log'
 chat:
   auto_reply: true
