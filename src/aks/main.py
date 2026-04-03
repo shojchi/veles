@@ -32,9 +32,10 @@ def cli() -> None:
 def ask(query: str, agent: str | None) -> None:
     """Ask a question. Usage: aks ask 'why is my code slow?'"""
     orchestrator = _get_orchestrator()
-    agent_name, model, chunks, sources = orchestrator.stream(query, force_agent=agent)
+    chain, model, chunks, sources = orchestrator.stream_chain(query, force_agent=agent)
 
-    click.echo(f"\n[{agent_name} | {model}]\n")
+    chain_str = " → ".join(chain)
+    click.echo(f"\n[{chain_str} | {model}]\n")
     for chunk in chunks:
         click.echo(chunk, nl=False)
     click.echo("\n")
@@ -114,9 +115,10 @@ def chat() -> None:
     click.echo("AKS Chat — type your message. Ctrl+C to exit.\n")
     while True:
         query = click.prompt("you")
-        agent_name, _, chunks, _ = orchestrator.stream(query, conversation_history=history)
+        chain, _, chunks, _ = orchestrator.stream_chain(query, conversation_history=history)
 
-        click.echo(f"\n[{agent_name}] ", nl=False)
+        chain_str = " → ".join(chain)
+        click.echo(f"\n[{chain_str}] ", nl=False)
         content = ""
         for chunk in chunks:
             click.echo(chunk, nl=False)
