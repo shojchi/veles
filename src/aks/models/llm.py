@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Iterator
 
 
 @dataclass
@@ -26,21 +26,23 @@ def _gemini_client() -> Any:
     return genai.Client(api_key=api_key)
 
 
+def _gemini_contents(messages: list[dict]) -> list:
+    from google.genai import types
+    return [
+        types.Content(
+            role="model" if m["role"] == "assistant" else m["role"],
+            parts=[types.Part(text=m["content"])],
+        )
+        for m in messages
+    ]
+
+
 def _gemini_complete(client: Any, config: ModelConfig, system: str, messages: list[dict]) -> str:
     from google.genai import types
 
-    # Convert messages to Gemini Content format
-    # Gemini uses "model" instead of "assistant"
-    contents = []
-    for msg in messages:
-        role = "model" if msg["role"] == "assistant" else msg["role"]
-        contents.append(
-            types.Content(role=role, parts=[types.Part(text=msg["content"])])
-        )
-
     response = client.models.generate_content(
         model=config.model,
-        contents=contents,
+        contents=_gemini_contents(messages),
         config=types.GenerateContentConfig(
             system_instruction=system,
             max_output_tokens=config.max_tokens,
@@ -48,6 +50,24 @@ def _gemini_complete(client: Any, config: ModelConfig, system: str, messages: li
         ),
     )
     return response.text
+
+
+def _gemini_stream(
+    client: Any, config: ModelConfig, system: str, messages: list[dict]
+) -> Iterator[str]:
+    from google.genai import types
+
+    for chunk in client.models.generate_content_stream(
+        model=config.model,
+        contents=_gemini_contents(messages),
+        config=types.GenerateContentConfig(
+            system_instruction=system,
+            max_output_tokens=config.max_tokens,
+            temperature=config.temperature,
+        ),
+    ):
+        if chunk.text:
+            yield chunk.text
 
 
 # ---------------------------------------------------------------------------
@@ -71,6 +91,19 @@ def _anthropic_complete(client: Any, config: ModelConfig, system: str, messages:
         messages=messages,
     )
     return response.content[0].text
+
+
+def _anthropic_stream(
+    client: Any, config: ModelConfig, system: str, messages: list[dict]
+) -> Iterator[str]:
+    with client.messages.stream(
+        model=config.model,
+        max_tokens=config.max_tokens,
+        temperature=config.temperature,
+        system=system,
+        messages=messages,
+    ) as s:
+        yield from s.text_stream
 
 
 # ---------------------------------------------------------------------------
@@ -119,3 +152,16 @@ def complete(
     if config.provider == "gemini":
         return _gemini_complete(client, config, system, messages)
     return _anthropic_complete(client, config, system, messages)
+
+
+def stream(
+    client: Any,
+    config: ModelConfig,
+    system: str,
+    messages: list[dict],
+) -> Iterator[str]:
+    """Yield text chunks as they arrive from the provider."""
+    if config.provider == "gemini":
+        yield from _gemini_stream(client, config, system, messages)
+    else:
+        yield from _anthropic_stream(client, config, system, messages)

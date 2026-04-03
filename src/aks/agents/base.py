@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Iterator
 
-from aks.models.llm import ModelConfig, complete
+from aks.models.llm import ModelConfig, complete, stream
 from aks.utils.config import agent_config, models_config, get_provider
 
 
@@ -58,6 +58,15 @@ class BaseAgent:
             model_used=self.model_config.model,
             sources_used=sources,
         )
+
+    def stream(self, msg: AgentMessage) -> tuple[Iterator[str], list[str]]:
+        """Yield text chunks from the LLM. Returns (chunk_iterator, sources)."""
+        system = self._build_system(msg.context)
+        messages = list(msg.conversation_history) + [
+            {"role": "user", "content": msg.query}
+        ]
+        sources = self._extract_sources(msg.context)
+        return stream(self.client, self.model_config, system, messages), sources
 
     def _build_system(self, context: str) -> str:
         base = self._agent_cfg["system_prompt"]

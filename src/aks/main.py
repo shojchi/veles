@@ -30,14 +30,16 @@ def cli() -> None:
 def ask(query: str, agent: str | None) -> None:
     """Ask a question. Usage: aks ask 'why is my code slow?'"""
     orchestrator = _get_orchestrator()
-    response = orchestrator.run(query, force_agent=agent)
+    agent_name, model, chunks, sources = orchestrator.stream(query, force_agent=agent)
 
-    click.echo(f"\n[{response.agent} | {response.model_used}]\n")
-    click.echo(response.content)
+    click.echo(f"\n[{agent_name} | {model}]\n")
+    for chunk in chunks:
+        click.echo(chunk, nl=False)
+    click.echo("\n")
 
-    if response.sources_used:
-        click.echo("\n--- Sources ---")
-        for src in response.sources_used:
+    if sources:
+        click.echo("--- Sources ---")
+        for src in sources:
             click.echo(f"  • {src.strip()}")
 
 
@@ -88,6 +90,28 @@ def search(query: str) -> None:
     for r in results:
         click.echo(f"\n[{r.score:.2f}] {r.note.title}  ({r.note.path.name})")
         click.echo(f"  {r.snippet}")
+
+
+@cli.command()
+def chat() -> None:
+    """Start an interactive multi-turn chat session."""
+    orchestrator = _get_orchestrator()
+    history: list[dict] = []
+
+    click.echo("AKS Chat — type your message. Ctrl+C to exit.\n")
+    while True:
+        query = click.prompt("you")
+        agent_name, _, chunks, _ = orchestrator.stream(query, conversation_history=history)
+
+        click.echo(f"\n[{agent_name}] ", nl=False)
+        content = ""
+        for chunk in chunks:
+            click.echo(chunk, nl=False)
+            content += chunk
+        click.echo("\n")
+
+        history.append({"role": "user", "content": query})
+        history.append({"role": "assistant", "content": content})
 
 
 if __name__ == "__main__":

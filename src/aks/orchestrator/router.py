@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import Any, Iterator
 
 from aks.agents.base import AgentMessage, AgentResponse, BaseAgent
 from aks.agents.code_agent import CodeAgent
@@ -91,3 +91,27 @@ class Orchestrator:
             conversation_history=conversation_history or [],
         )
         return self._agents[agent_name].run(msg)
+
+    def stream(
+        self,
+        query: str,
+        conversation_history: list[dict] | None = None,
+        force_agent: str | None = None,
+    ) -> tuple[str, str, Iterator[str], list[str]]:
+        """Route the query and stream the response.
+
+        Returns (agent_name, model, chunk_iterator, sources).
+        Routing is still a blocking call; only the agent response streams.
+        """
+        agent_name = self.route(query, force_agent)
+        context = retrieve_context(query, self.store)
+        msg = AgentMessage(
+            message_id=str(uuid.uuid4()),
+            sender="orchestrator",
+            receiver=agent_name,
+            query=query,
+            context=context,
+            conversation_history=conversation_history or [],
+        )
+        chunks, sources = self._agents[agent_name].stream(msg)
+        return agent_name, self._agents[agent_name].model_config.model, chunks, sources
