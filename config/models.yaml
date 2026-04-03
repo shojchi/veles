@@ -28,9 +28,9 @@ models:
 
   # Phase 2: embeddings
   embeddings:
-    model: "text-embedding-004"
+    model: "gemini-embedding-001"
     provider: "gemini"
-    dimensions: 768
+    dimensions: 3072
 
 # --- Anthropic equivalents (swap provider above to use) ---
 # orchestrator: claude-haiku-4-5-20251001
