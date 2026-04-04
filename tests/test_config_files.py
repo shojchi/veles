@@ -120,7 +120,7 @@ class TestLaunchJsonConfiguration:
         assert isinstance(first_config["port"], int)
 
     def test_port_value(self, first_config):
-        assert first_config["port"] == 8080
+        assert first_config["port"] == 7337
 
     def test_port_is_valid_range(self, first_config):
         assert 1 <= first_config["port"] <= 65535
