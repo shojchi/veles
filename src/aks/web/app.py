@@ -444,6 +444,22 @@ async def note_detail(request: Request, slug: str):
     )
 
 
+@app.delete("/note/{slug}", response_class=HTMLResponse)
+async def note_delete(request: Request, slug: str):
+    from aks.knowledge.store import KnowledgeStore
+
+    store = KnowledgeStore()
+    note = next((n for n in store.list_notes() if n.path.stem == slug), None)
+    if not note:
+        return HTMLResponse(status_code=404)
+    store.delete_note(note.path)
+    raw_notes = store.list_notes()
+    notes = [{"note": n, "age": _note_age(n.path)} for n in raw_notes]
+    return templates.TemplateResponse(
+        request, "partials/note_list.html", {"notes": notes, "q": ""}
+    )
+
+
 @app.get("/status", response_class=HTMLResponse)
 async def status_panel(request: Request):
     from aks.utils.config import get_provider

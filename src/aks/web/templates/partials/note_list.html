@@ -1,11 +1,16 @@
 {% if notes %}
   {% for item in notes %}
-  <div class="group cursor-pointer hover:bg-surface-container-high/60 px-3 py-3 rounded-sm transition-all"
+  <div class="group cursor-pointer hover:bg-surface-container-high/60 px-3 py-3 rounded-sm transition-all relative"
        data-note-id="{{ item.note.path.stem }}"
        data-note-title="{{ item.note.title | e }}"
        onclick="openNoteTab(this.dataset.noteId, this.dataset.noteTitle)">
-    <p class="text-sm text-on-surface/80 group-hover:text-on-surface truncate leading-snug">{{ item.note.title }}</p>
+    <p class="text-sm text-on-surface/80 group-hover:text-on-surface truncate leading-snug pr-6">{{ item.note.title }}</p>
     <p class="font-label text-[10px] text-outline/40 mt-0.5 uppercase tracking-wide">{{ item.age }}</p>
+    <button class="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-outline/40 hover:text-error p-1 rounded"
+            onclick="event.stopPropagation(); deleteNote('{{ item.note.path.stem }}', '{{ item.note.title | e }}')"
+            title="Delete note">
+      <span class="material-symbols-outlined" style="font-size:15px;line-height:1">delete</span>
+    </button>
   </div>
   {% endfor %}
 {% else %}
