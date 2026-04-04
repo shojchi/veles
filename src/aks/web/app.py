@@ -422,6 +422,24 @@ async def import_pdf_file(request: Request):
     )
 
 
+@app.get("/note/{slug}", response_class=HTMLResponse)
+async def note_detail(request: Request, slug: str):
+    from aks.knowledge.store import KnowledgeStore
+
+    store = KnowledgeStore()
+    note = next((n for n in store.list_notes() if n.path.stem == slug), None)
+    if not note:
+        return HTMLResponse(
+            '<p class="text-xs text-error font-label uppercase px-3 py-2">Note not found.</p>',
+            status_code=404,
+        )
+    return templates.TemplateResponse(
+        request,
+        "partials/note_detail.html",
+        {"note": note, "age": _note_age(note.path)},
+    )
+
+
 @app.get("/status", response_class=HTMLResponse)
 async def status_panel(request: Request):
     from aks.utils.config import get_provider

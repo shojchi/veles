@@ -1,0 +1,7 @@
+<div class="overflow-y-auto px-8 py-8 no-scrollbar flex-1">
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-xl font-headline font-semibold text-on-surface mb-1 leading-tight">{{ note.title }}</h1>
+    <p class="font-label text-[10px] text-outline/40 uppercase tracking-wide mb-8">{{ age }}</p>
+    <div class="ai-prose note-md text-sm leading-relaxed" data-raw="{{ note.body | e }}"></div>
+  </div>
+</div>
