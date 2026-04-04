@@ -19,11 +19,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import Cookie, FastAPI, Form, Request, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sse_starlette.sse import EventSourceResponse
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
+STATIC_DIR = Path(__file__).parent / "static"
 
 # ---------------------------------------------------------------------------
 # SSRF guard
@@ -453,3 +455,11 @@ async def status_panel(request: Request):
         "partials/status_panel.html",
         {"provider": get_provider().upper(), **_cost_context()},
     )
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon() -> FileResponse:
+    return FileResponse(STATIC_DIR / "favicon.ico", media_type="image/x-icon")
+
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

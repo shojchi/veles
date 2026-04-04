@@ -31,7 +31,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aks"]
-include = ["src/aks/config/**", "src/aks/web/templates/**"]
+include = ["src/aks/config/**", "src/aks/web/templates/**", "src/aks/web/static/**"]
 
 [tool.uv]
 dev-dependencies = [
