@@ -1,13 +1,11 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 language: 'en-US'
 tone_instructions: |
-  This is a personal AI assistant project (AKS) built in Python for learning purposes.
-  Please focus on:
+  Focus on:
   1. Python best practices (PEP 8, type hints, async patterns)
   2. Code readability and maintainability
   3. LLM integration patterns and prompt engineering quality
   4. Security basics (API key handling, input sanitization)
-  Be encouraging and educational in feedback!
 enable_free_tier: true
 reviews:
   profile: 'chill'
