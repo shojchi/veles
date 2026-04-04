@@ -15,6 +15,9 @@ from pathlib import Path
 from typing import AsyncIterator
 from urllib.parse import urljoin, urlparse
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import Cookie, FastAPI, Form, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -257,6 +260,7 @@ async def chat_post(
             _sessions[session_id].append({"role": "assistant", "content": full})
             q.put(("done", {"content": full, "chain": chain_str, "sources": sources}))
         except Exception as exc:  # noqa: BLE001
+            import traceback; traceback.print_exc()
             q.put(("error", str(exc)))
         finally:
             _session_active.pop(session_id, None)
