@@ -27,6 +27,9 @@ _sessions: dict[str, list[dict]] = {}
 # task_id → {"queue": SimpleQueue, "session_id": str}
 _tasks: dict[str, dict] = {}
 
+# session_id → task_id of the one in-flight request (serialises chat per session)
+_session_active: dict[str, str] = {}
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -122,17 +125,25 @@ async def chat_post(
     if not session_id:
         session_id = str(uuid.uuid4())
 
+    # Reject concurrent submits for the same session to prevent history corruption.
+    if session_id in _session_active:
+        return HTMLResponse(
+            '<p class="font-label text-[10px] uppercase tracking-wider text-outline/50 text-center px-4 py-6">'
+            "Still thinking — please wait…</p>",
+            status_code=429,
+        )
+
     # Snapshot history before adding user message (don't include it in the
     # conversation_history passed to the model — the agent adds it itself).
     history_snapshot = list(_sessions.get(session_id, []))
 
     # Append user turn immediately so page reload shows it.
-    history = history_snapshot + [{"role": "user", "content": message}]
-    _sessions[session_id] = history
+    _sessions[session_id] = history_snapshot + [{"role": "user", "content": message}]
 
     task_id = str(uuid.uuid4())
     q: queue.SimpleQueue = queue.SimpleQueue()
     _tasks[task_id] = {"queue": q, "session_id": session_id}
+    _session_active[session_id] = task_id
 
     def _run() -> None:
         try:
@@ -145,11 +156,13 @@ async def chat_post(
             for chunk in chunks:
                 full += chunk
                 q.put(("chunk", full))
-            # Persist assistant reply.
+            # Persist assistant reply atomically after the full response is known.
             _sessions[session_id].append({"role": "assistant", "content": full})
             q.put(("done", {"content": full, "chain": chain_str, "sources": sources}))
         except Exception as exc:  # noqa: BLE001
             q.put(("error", str(exc)))
+        finally:
+            _session_active.pop(session_id, None)
 
     threading.Thread(target=_run, daemon=True).start()
 
@@ -178,6 +191,7 @@ async def chat_stream(task_id: str, request: Request):
         while True:
             if await request.is_disconnected():
                 _tasks.pop(task_id, None)
+                _session_active.pop(task.get("session_id"), None)
                 return
 
             try:
