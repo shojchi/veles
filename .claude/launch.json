@@ -5,7 +5,7 @@
       "name": "AKS Web UI",
       "runtimeExecutable": "/Users/roman.hordiichuk/.local/bin/uv",
       "runtimeArgs": ["run", "aks", "serve", "--reload"],
-      "port": 8080
+      "port": 7337
     }
   ]
 }
