@@ -309,8 +309,8 @@
     <!-- Messages -->
     <div id="chat-messages" class="flex-1 overflow-y-auto px-8 py-8 space-y-8 no-scrollbar">
       {% if not history %}
-      <!-- Empty state -->
-      <div class="flex flex-col items-center justify-center h-full text-center gap-4 opacity-40 select-none">
+      <!-- Empty state (removed client-side on first successful message — see chat form hx-on) -->
+      <div id="chat-empty-state" class="flex flex-col items-center justify-center h-full text-center gap-4 opacity-40 select-none">
         <span class="material-symbols-outlined text-5xl text-primary/50">psychology</span>
         <p class="font-label text-xs uppercase tracking-widest text-outline/60">Ask anything about your knowledge base</p>
       </div>
@@ -358,7 +358,7 @@
           hx-post="/chat"
           hx-target="#chat-messages"
           hx-swap="beforeend"
-          hx-on::after-request="this.reset(); scrollToBottom();"
+          hx-on::after-request="if(event.detail.successful){document.getElementById('chat-empty-state')?.remove();} this.reset(); scrollToBottom();"
           class="flex items-end gap-3"
         >
           <textarea
