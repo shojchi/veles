@@ -43,3 +43,4 @@ htmlcov/
 cost.db
 chat_history.jsonl
 knowledge/notes/
+.claude/
