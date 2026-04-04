@@ -1,5 +1,5 @@
 [project]
-name = "aks"
+name = "veles"
 version = "0.1.0"
 description = "Agent Knowledge System — personal AI assistant grounded in your notes"
 requires-python = ">=3.12"
