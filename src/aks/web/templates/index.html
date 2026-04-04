@@ -488,6 +488,15 @@
     if (_activeTab === noteId) switchToTab('chat');
   }
 
+  async function deleteNote(slug, title) {
+    if (!confirm(`Delete "${title}"?`)) return;
+    const resp = await fetch('/note/' + encodeURIComponent(slug), { method: 'DELETE' });
+    if (resp.ok) {
+      document.getElementById('note-list').innerHTML = await resp.text();
+      closeTab(slug);
+    }
+  }
+
   // ----------------------------------------------------------------
   // Import modal
   // ----------------------------------------------------------------
