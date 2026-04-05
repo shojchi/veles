@@ -327,25 +327,6 @@
       <div id="tab-chat" onclick="switchToTab('chat')" class="tab-item tab-active">
         chat
       </div>
-      <!-- Font size controls -->
-      <div class="ml-auto flex items-center gap-1 px-2 shrink-0">
-        <button
-          onclick="adjustFontSize(-1)"
-          id="btn-font-down"
-          class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high text-outline hover:text-on-surface transition-colors"
-          title="Decrease font size"
-        >
-          <span style="font-size:0.625rem;font-weight:600">A</span><span style="font-size:0.5rem;font-weight:700;vertical-align:super;line-height:0">−</span>
-        </button>
-        <button
-          onclick="adjustFontSize(1)"
-          id="btn-font-up"
-          class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high text-outline hover:text-on-surface transition-colors"
-          title="Increase font size"
-        >
-          <span style="font-size:0.875rem;font-weight:700">A</span><span style="font-size:0.5rem;font-weight:700;vertical-align:super;line-height:0">+</span>
-        </button>
-      </div>
     </div>
 
     <!-- Tab panels wrapper -->
@@ -435,6 +416,25 @@
        RIGHT COLUMN — Technical Metadata (240 px)
        ================================================================== -->
   <aside class="w-[240px] bg-surface-container-low border-l border-outline-variant/20 flex flex-col shrink-0">
+    <!-- Font size controls -->
+    <div class="flex items-center justify-end gap-1 px-2 border-b border-outline-variant/15 shrink-0" style="height:36px">
+      <button
+        onclick="adjustFontSize(-1)"
+        id="btn-font-down"
+        class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high text-outline hover:text-on-surface transition-colors"
+        title="Decrease font size"
+      >
+        <span style="font-size:0.625rem;font-weight:600">A</span><span style="font-size:0.5rem;font-weight:700;vertical-align:super;line-height:0">−</span>
+      </button>
+      <button
+        onclick="adjustFontSize(1)"
+        id="btn-font-up"
+        class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high text-outline hover:text-on-surface transition-colors"
+        title="Increase font size"
+      >
+        <span style="font-size:0.875rem;font-weight:700">A</span><span style="font-size:0.5rem;font-weight:700;vertical-align:super;line-height:0">+</span>
+      </button>
+    </div>
     <div
       id="status-panel"
       class="p-6 space-y-8 overflow-y-auto no-scrollbar flex-1"
