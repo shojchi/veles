@@ -8,24 +8,42 @@
   </div>
 </div>
 
-<!-- Cost tracking card -->
+<!-- Token usage card -->
 <div class="bg-surface-container-high/40 p-5 rounded border border-outline-variant/10 space-y-4">
   <div class="flex items-center gap-2">
-    <span class="font-mono text-[0.725rem] tracking-wider uppercase text-outline/80">Cost Tracking</span>
+    <span class="font-mono text-[0.725rem] tracking-wider uppercase text-outline/80">Token Usage</span>
   </div>
   <div>
     <p class="font-mono text-[0.5725rem] uppercase text-outline/60 mb-1">Today</p>
-    <p class="text-xl font-bold tracking-tight text-on-surface">${{ "%.4f" | format(today_cost) }}</p>
+    <p class="text-xl font-bold tracking-tight text-on-surface font-mono cursor-default" title="{{ '{:,}'.format(today_tokens).replace(',', ' ') }} of {{ '{:,}'.format(token_limit).replace(',', ' ') }}">{{ today_tokens | fmt_tokens }} <span class="text-outline/40 text-sm font-normal">/ {{ token_limit | fmt_tokens }}</span></p>
   </div>
   <div class="space-y-2">
     <div class="h-[2px] bg-outline-variant/10 rounded-full overflow-hidden">
-      <div class="h-full bg-primary transition-all duration-500" style="width: {{ [cap_pct, 100] | min }}%"></div>
+      <div id="token-bar-fill" class="h-full bg-primary transition-all duration-500" style="width: {{ token_pct }}%"></div>
     </div>
-    <div class="flex justify-between font-mono text-[0.5725rem] uppercase">
-      <span class="text-outline/40">Cap: ${{ "%.2f" | format(cap) }}</span>
-      <span class="text-tertiary">{{ "%.2f" | format(cap_pct) }}%</span>
+    <div class="flex justify-between font-mono text-[0.5725rem] uppercase cursor-pointer select-none"
+         onclick="toggleTokenMode(this)"
+         data-mode="used"
+         data-used-pct="{{ '%.2f' | format(token_pct) }}"
+         data-left-pct="{{ '%.2f' | format(100 - token_pct) }}">
+      <span class="text-outline/40">Cerebras</span>
+      <span id="token-pct-label" class="text-tertiary"><span id="token-pct-prefix" class="text-outline/40">used: </span>{{ "%.2f" | format(token_pct) }}%</span>
     </div>
   </div>
+  <script>
+    function toggleTokenMode(el) {
+      const bar = document.getElementById('token-bar-fill');
+      const prefix = document.getElementById('token-pct-prefix');
+      const label = document.getElementById('token-pct-label');
+      const isUsed = el.dataset.mode === 'used';
+      el.dataset.mode = isUsed ? 'left' : 'used';
+      const pct = isUsed ? el.dataset.leftPct : el.dataset.usedPct;
+      bar.style.width = pct + '%';
+      prefix.textContent = isUsed ? 'left: ' : 'used: ';
+      label.textContent = pct + '%';
+      label.prepend(prefix);
+    }
+  </script>
 </div>
 
 <!-- Active agents -->
