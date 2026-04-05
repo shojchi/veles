@@ -4,7 +4,7 @@ Show less
 ## COMPREHENSIVE CODEBASE OVERVIEW: AKS (Agent Knowledge System) with name Veles in next both Veles and AKS could appears through the project and it refers the same entity.
 ### 1. DIRECTORY STRUCTURE (Complete File Listing)
 ```
-/Users/roman.hordiichuk/Desktop/aks/.claude/worktrees/festive-goldberg/
+/Users/roman.hordiichuk/Desktop/veles/.claude/worktrees/festive-goldberg/
 ├── .claude/
 │   └── settings.local.json          (Claude Code permissions config)
 ├── .env.example                     (Environment variable template)

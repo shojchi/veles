@@ -24,7 +24,7 @@ Personal AI assistant that routes queries to specialized agents, grounded in you
 
 ```bash
 # 1. Clone and enter the repo
-git clone https://github.com/shojchi/aks.git && cd aks
+git clone https://github.com/shojchi/veles.git && cd veles
 
 # 2. Install dependencies
 uv sync
