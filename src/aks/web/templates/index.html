@@ -240,7 +240,7 @@
           </div>
           <div class="text-center">
             <p class="text-sm font-medium text-on-surface-variant">Drop a PDF here or click to browse</p>
-            <p class="font-label text-[0.625rem] text-outline uppercase tracking-wider mt-1">PDF only · max 50 MB</p>
+            <p class="font-label text-[0.725rem] text-outline uppercase tracking-wider mt-1">PDF only · max 50 MB</p>
           </div>
           <input id="file-input" type="file" name="file" accept=".pdf" class="hidden" onchange="updateFileLabel(this)" />
         </label>
@@ -280,14 +280,14 @@
       <div class="flex gap-2">
         <button
           disabled
-          class="flex-1 text-[0.625rem] uppercase font-label bg-surface-container-high text-on-surface/25 px-3 py-2 rounded flex items-center justify-center gap-1.5 cursor-not-allowed border border-outline-variant/10"
+          class="flex-1 text-[0.725rem] uppercase font-label bg-surface-container-high text-on-surface/25 px-3 py-2 rounded flex items-center justify-center gap-1.5 cursor-not-allowed border border-outline-variant/10"
         >
           <span class="material-symbols-outlined text-sm">add</span>
           New
         </button>
         <button
           onclick="openImportModal()"
-          class="flex-1 text-[0.625rem] uppercase font-label bg-surface-container-high text-on-surface px-3 py-2 rounded flex items-center justify-center gap-1.5 hover:bg-surface-bright transition-all active:scale-95 border border-outline-variant/20"
+          class="flex-1 text-[0.725rem] uppercase font-label bg-surface-container-high text-on-surface px-3 py-2 rounded flex items-center justify-center gap-1.5 hover:bg-surface-bright transition-all active:scale-95 border border-outline-variant/20"
         >
           <span class="material-symbols-outlined text-sm">upload_file</span>
           Import
@@ -360,7 +360,7 @@
           <div class="flex items-center gap-2 mb-1">
             <span class="px-2 py-0.5 bg-surface-container-highest rounded-full flex items-center gap-1.5 border border-outline-variant/20">
               <span class="w-1.5 h-1.5 bg-primary rounded-full"></span>
-              <span class="font-label text-[0.625rem] uppercase tracking-tighter text-primary">aks</span>
+              <span class="font-label text-[0.725rem] uppercase tracking-tighter text-primary">aks</span>
             </span>
           </div>
           <div class="ai-prose history-md max-w-[90%] bg-surface-container-low border-l-2 border-primary px-5 py-4 text-sm leading-relaxed"
@@ -379,7 +379,7 @@
         <div class="flex items-center gap-2 mb-2 px-1">
           <div class="px-2 py-1 bg-surface-container-high rounded flex items-center gap-1.5">
             <span class="material-symbols-outlined text-xs text-primary">smart_toy</span>
-            <span class="font-label text-[0.625rem] uppercase text-on-surface/70">auto agent</span>
+            <span class="font-label text-[0.725rem] uppercase text-on-surface/70">auto agent</span>
           </div>
         </div>
         <!-- Form -->
@@ -424,7 +424,7 @@
         class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high text-outline hover:text-on-surface transition-colors"
         title="Decrease font size"
       >
-        <span style="font-size:0.625rem;font-weight:600">A</span><span style="font-size:0.5rem;font-weight:700;vertical-align:super;line-height:0">−</span>
+        <span style="font-size:0.725rem;font-weight:600">A</span><span style="font-size:0.5rem;font-weight:700;vertical-align:super;line-height:0">−</span>
       </button>
       <button
         onclick="adjustFontSize(1)"
@@ -609,7 +609,7 @@
       const dot = document.createElement('span');
       dot.className = 'w-1.5 h-1.5 bg-primary rounded-full';
       const label = document.createElement('span');
-      label.className = 'font-label text-[0.625rem] uppercase tracking-tighter text-primary';
+      label.className = 'font-label text-[0.725rem] uppercase tracking-tighter text-primary';
       label.textContent = data.chain;
       outer.append(dot, label);
       badge.replaceChildren(outer);

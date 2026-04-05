@@ -2,7 +2,7 @@
 <div class="bg-surface-container-high/40 p-5 rounded border border-outline-variant/10 space-y-4">
   <div class="flex items-center gap-2">
     <span class="material-symbols-outlined text-sm text-outline/70">settings</span>
-    <span class="font-mono text-[0.625rem] tracking-wider uppercase text-outline/80">Provider</span>
+    <span class="font-mono text-[0.725rem] tracking-wider uppercase text-outline/80">Provider</span>
   </div>
   <div class="font-monoGoogle text-lg font-black tracking-[0.15em] text-primary uppercase">
     {{ provider }}
@@ -13,17 +13,17 @@
 <div class="bg-surface-container-high/40 p-5 rounded border border-outline-variant/10 space-y-4">
   <div class="flex items-center gap-2">
     <span class="material-symbols-outlined text-sm text-outline/70">account_balance_wallet</span>
-    <span class="font-mono text-[0.625rem] tracking-wider uppercase text-outline/80">Cost Tracking</span>
+    <span class="font-mono text-[0.725rem] tracking-wider uppercase text-outline/80">Cost Tracking</span>
   </div>
   <div>
-    <p class="font-mono text-[0.5625rem] uppercase text-outline/60 mb-1">Today</p>
+    <p class="font-mono text-[0.5725rem] uppercase text-outline/60 mb-1">Today</p>
     <p class="text-xl font-bold tracking-tight text-on-surface">${{ "%.4f" | format(today_cost) }}</p>
   </div>
   <div class="space-y-2">
     <div class="h-[2px] bg-outline-variant/10 rounded-full overflow-hidden">
       <div class="h-full bg-primary transition-all duration-500" style="width: {{ [cap_pct, 100] | min }}%"></div>
     </div>
-    <div class="flex justify-between font-mono text-[0.5625rem] uppercase">
+    <div class="flex justify-between font-mono text-[0.5725rem] uppercase">
       <span class="text-outline/40">Cap: ${{ "%.2f" | format(cap) }}</span>
       <span class="text-tertiary">{{ "%.2f" | format(cap_pct) }}%</span>
     </div>
@@ -34,11 +34,11 @@
 <div class="space-y-4">
   <div class="flex items-center gap-2">
     <span class="material-symbols-outlined text-sm text-outline/70">smart_toy</span>
-    <span class="font-mono text-[0.625rem] tracking-widest uppercase text-on-surface/60">Active Agents</span>
+    <span class="font-mono text-[0.725rem] tracking-widest uppercase text-on-surface/60">Active Agents</span>
   </div>
   <div class="space-y-0.5">
     {% for name in ["router", "pkm", "code", "writing", "planning"] %}
-    <div class="flex justify-between items-center py-2 px-1 font-mono text-[0.625rem] border-b border-outline-variant/5 last:border-0">
+    <div class="flex justify-between items-center py-2 px-1 font-mono text-[0.725rem] border-b border-outline-variant/5 last:border-0">
       <span class="uppercase text-on-surface/70 tracking-wider">{{ name }}</span>
       <span class="uppercase text-outline/35">Idle</span>
     </div>
@@ -51,9 +51,9 @@
   <div class="bg-surface-container-high/20 p-3 rounded border border-primary/5">
     <div class="flex items-center gap-2 mb-2">
       <span class="material-symbols-outlined text-xs text-primary" style="font-variation-settings:'FILL' 1;">bolt</span>
-      <span class="text-[0.625rem] font-mono uppercase text-on-surface/60 tracking-wider">System Health</span>
+      <span class="text-[0.725rem] font-mono uppercase text-on-surface/60 tracking-wider">System Health</span>
     </div>
-    <div class="flex justify-between items-center font-mono text-[0.625rem]">
+    <div class="flex justify-between items-center font-mono text-[0.725rem]">
       <span class="text-outline/50 uppercase">Status</span>
       <span class="text-success">Online</span>
     </div>
