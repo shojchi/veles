@@ -258,13 +258,14 @@ class KnowledgeStore:
     # ------------------------------------------------------------------
 
     def list_notes(self) -> list[Note]:
-        """Return all indexed notes sorted by title."""
-        rows = self._db.execute("SELECT path FROM notes ORDER BY title").fetchall()
+        """Return all indexed notes sorted by modification time (newest first)."""
+        rows = self._db.execute("SELECT path FROM notes").fetchall()
         notes = []
         for (path_str,) in rows:
             p = Path(path_str)
             if p.exists():
                 notes.append(_parse_note(p))
+        notes.sort(key=lambda n: n.path.stat().st_mtime, reverse=True)
         return notes
 
     # ------------------------------------------------------------------

@@ -10,7 +10,7 @@ import socket
 import threading
 import urllib.request
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import AsyncIterator
 from urllib.parse import urljoin, urlparse
@@ -151,15 +151,12 @@ def _make_orchestrator():
 def _note_age(path: Path) -> str:
     try:
         mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
-        delta = datetime.now(timezone.utc) - mtime
-        if delta.days == 0:
-            h = delta.seconds // 3600
-            return f"{h}h ago" if h > 0 else "just now"
-        if delta.days == 1:
+        now = datetime.now(timezone.utc)
+        if mtime.date() == now.date():
+            return "today"
+        if mtime.date() == (now - timedelta(days=1)).date():
             return "yesterday"
-        if delta.days < 30:
-            return f"{delta.days}d ago"
-        return mtime.strftime("%b %d")
+        return mtime.strftime("%d/%m/%Y")
     except OSError:
         return ""
 
