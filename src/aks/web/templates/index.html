@@ -438,7 +438,7 @@
       id="status-panel"
       class="p-6 space-y-8 overflow-y-auto no-scrollbar flex-1"
       hx-get="/status"
-      hx-trigger="every 6s"
+      hx-trigger="refreshStatus from:body"
       hx-swap="innerHTML"
     >
       {% include "partials/status_panel.html" %}
@@ -664,6 +664,9 @@
       badge.replaceChildren(outer);
     }
 
+    // Refresh token usage after the LLM call completes.
+    htmx.trigger(document.body, 'refreshStatus');
+
     // Build final bubble and replace SSE element.
     const finalDiv = document.createElement('div');
     finalDiv.className = 'ai-prose max-w-[90%] bg-surface-container-low border-l-2 border-primary px-5 py-4 text-sm leading-relaxed';
@@ -693,6 +696,34 @@
 
   document.addEventListener('htmx:afterSwap', (e) => {
     if (e.detail.target?.id === 'chat-messages') scrollToBottom();
+  });
+
+  // Preserve token usage toggle mode across status panel refreshes.
+  // Patch the incoming HTML *before* insertion so the bar is never painted at the wrong width.
+  let _tokenMode = 'used';
+  document.addEventListener('htmx:beforeSwap', (e) => {
+    if (e.detail.target?.id !== 'status-panel') return;
+    const row = document.querySelector('[data-mode]');
+    _tokenMode = row?.dataset.mode ?? 'used';
+    if (_tokenMode !== 'left') return;
+
+    const tmp = document.createElement('div');
+    tmp.innerHTML = e.detail.serverResponse;
+    const bar = tmp.querySelector('#token-bar-fill');
+    const modeRow = tmp.querySelector('[data-mode]');
+    if (bar && modeRow) {
+      const leftPct = modeRow.dataset.leftPct;
+      bar.style.width = leftPct + '%';
+      modeRow.dataset.mode = 'left';
+      const prefix = tmp.querySelector('#token-pct-prefix');
+      const label = tmp.querySelector('#token-pct-label');
+      if (prefix && label) {
+        prefix.textContent = 'left: ';
+        label.textContent = leftPct + '%';
+        label.prepend(prefix);
+      }
+    }
+    e.detail.serverResponse = tmp.innerHTML;
   });
 
   // ----------------------------------------------------------------

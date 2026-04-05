@@ -74,6 +74,22 @@ class CostLedger:
         ).fetchone()
         return row[0]
 
+    def today_tokens(self, provider: str | None = None) -> int:
+        today = date.today().isoformat()
+        if provider:
+            row = self._db.execute(
+                "SELECT COALESCE(SUM(input_tokens + output_tokens), 0) "
+                "FROM usage WHERE ts >= ? AND provider = ?",
+                (today, provider),
+            ).fetchone()
+        else:
+            row = self._db.execute(
+                "SELECT COALESCE(SUM(input_tokens + output_tokens), 0) "
+                "FROM usage WHERE ts >= ?",
+                (today,),
+            ).fetchone()
+        return row[0]
+
     def today_by_provider(self) -> list[dict]:
         today = date.today().isoformat()
         rows = self._db.execute(

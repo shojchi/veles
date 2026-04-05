@@ -121,6 +121,17 @@ def _safe_fetch(url: str, max_redirects: int = 5) -> str | None:
     return None  # exceeded max_redirects
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
+
+def _fmt_tokens(n: int) -> str:
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}".rstrip("0").rstrip(".") + "M"
+    if n >= 1_000:
+        return f"{n / 1_000:.1f}".rstrip("0").rstrip(".") + "K"
+    return str(n)
+
+
+templates.env.filters["fmt_tokens"] = _fmt_tokens
+
 app = FastAPI(title="AKS", docs_url=None, redoc_url=None)
 
 # session_id → conversation history (in-memory; single-worker only)
@@ -161,15 +172,20 @@ def _note_age(path: Path) -> str:
         return ""
 
 
+_CEREBRAS_TOKEN_LIMIT = 1_000_000
+
+
 def _cost_context() -> dict:
     from aks.utils.cost import CostLedger
-    from aks.utils.config import system_config
 
     ledger = CostLedger()
-    today_cost = ledger.today_usd()
-    cap = system_config()["cost"]["daily_cap_usd"]
-    cap_pct = min(today_cost / cap * 100, 100) if cap > 0 else 0.0
-    return {"today_cost": today_cost, "cap": cap, "cap_pct": cap_pct}
+    today_tokens = ledger.today_tokens(provider="cerebras")
+    token_pct = min(today_tokens / _CEREBRAS_TOKEN_LIMIT * 100, 100)
+    return {
+        "today_tokens": today_tokens,
+        "token_limit": _CEREBRAS_TOKEN_LIMIT,
+        "token_pct": token_pct,
+    }
 
 
 # ---------------------------------------------------------------------------
